@@ -93,7 +93,7 @@ def get_packages():
         yield info
 
 def build_html(packages_list):
-    total_html = "<table>%s</table>"
+    total_html = '''<table><tr><th>Package</th><th>Downloads</th></tr>%s</table>'''
     rows = []
     row_template = '''<tr class="py3{py3}"><td><a href="{url}">{name}</a></td><td>{downloads}</td></tr>'''
     for package in reversed(packages_list):
