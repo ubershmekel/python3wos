@@ -10,7 +10,11 @@ from google.appengine.api import mail
 
 class MainPage(webapp.RequestHandler):
     def get(self):
-        template_values = {'results_table': open('results.html').read()}
+        template_values = {
+            'results_table': open('results.html').read(),
+            'date': open('date.txt').read(),
+            'count': open('count.txt').read(),
+            }
         path = os.path.join(os.path.dirname(__file__), 'index.html')
         self.response.out.write(template.render(path, template_values))
 

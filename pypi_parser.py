@@ -5,6 +5,7 @@ import pprint
 import re
 import os
 from collections import namedtuple
+import datetime
 
 from BeautifulSoup import BeautifulSoup
 
@@ -88,29 +89,42 @@ def get_packages():
             print(e)
             continue
             
-        #print info
+        print info
         yield info
 
-def build_html():
-    packages = list(get_packages())
-    def get_downloads(x): return x.downloads
-    packages.sort(key=get_downloads)
-    
-    # just for backup
-    open('results.txt', 'w').write(pprint.pformat(packages))
-    
-    top = packages[-how_many_to_chart:]
+def build_html(packages_list):
     total_html = "<table>%s</table>"
     rows = []
     row_template = '''<tr class="py3{py3}"><td><a href="{url}">{name}</a></td><td>{downloads}</td></tr>'''
-    for package in reversed(top):
+    for package in reversed(packages_list):
         rows.append(row_template.format(**package._asdict()))
 
     return total_html % '\n'.join(rows)
 
-html = build_html()
+def count_good(packages_list):
+    good = 0
+    for package in packages_list:
+        if package.py3:
+            good += 1
+    return good
 
-open('results.html', 'w').write(html)
+def main():
+    packages = list(get_packages())
+    def get_downloads(x): return x.downloads
+    packages.sort(key=get_downloads)
 
+    # just for backup
+    open('results.txt', 'w').write(pprint.pformat(packages))
+
+    top = packages[-how_many_to_chart:]
+    html = build_html(top)
+
+    open('results.html', 'w').write(html)
+    
+    open('count.txt', 'w').write('%d/%d' % (count_good(top), len(top)))
+    open('date.txt', 'w').write(datetime.datetime.now().isoformat())
+    
+
+main()
 
     
