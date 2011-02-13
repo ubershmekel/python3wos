@@ -28,13 +28,13 @@ def get_rows():
 def get_url(row):
     return re.findall(r'href="([^"]+)', row)[0]
 
-def get_table(html):
+def get_table(html, table_index=0):
     soup = BeautifulSoup(html)
     table = []
     all_tables = soup.findAll('table')
     if len(all_tables) == 0:
         return
-    table_soup = all_tables[0]
+    table_soup = all_tables[table_index]
     for tr in table_soup.findAll('tr'):
         row = []
         for td in tr.findAll(['td', 'th']):
@@ -46,7 +46,8 @@ def get_table(html):
     
 def get_downloads(html):
     downloads = 0
-    table = get_table(html)
+    # the last table contains the downloads info
+    table = get_table(html, -1)
     if table is None:
         return 0
     
@@ -82,6 +83,7 @@ def get_packages():
     rows = get_rows()
     for row in rows:
         url = get_url(row)
+        
         try:
             info = get_package_info(base_url + url)
         except Exception, e:
