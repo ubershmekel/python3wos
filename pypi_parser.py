@@ -1,6 +1,7 @@
 
 #from urllib.request import urlopen
 from urllib import urlopen
+import xmlrpclib
 import pprint
 import re
 import os
@@ -17,17 +18,22 @@ pkg_info = namedtuple('pkg_info', 'name url py3 downloads')
 
 how_many_to_chart = 100
 
+
 @filecache(3 * 24 * 60 * 60)
+def get_page(url):
+    return urlopen(url).read()
+
+
 def get_rows():
-    html = urlopen(pkg_list_url).read()
+    html = get_page(pkg_list_url)
     rows = re.findall(b'<tr[ ].*?</tr>', html, re.DOTALL)
     return rows
-
 
 
 def get_url(row):
     return re.findall(r'href="([^"]+)', row)[0]
 
+    
 def get_table(html, table_index=0):
     soup = BeautifulSoup(html)
     table = []
@@ -42,12 +48,19 @@ def get_table(html, table_index=0):
         table.append(row)
 
     return table
-            
+
     
 def get_downloads(html):
     downloads = 0
-    # the last table contains the downloads info
-    table = get_table(html, -1)
+    
+    # only one specific, table contains the downloads count
+    table_id = '''<table class="list" style="margin-bottom: 10px;">'''
+    downloads_table_html_found = re.findall(re.escape(table_id) + r'.*?</table>', html, re.DOTALL)
+    
+    if len(downloads_table_html_found) == 0:
+        return 0
+    
+    table = get_table(downloads_table_html_found[0])
     if table is None:
         return 0
     
@@ -60,39 +73,44 @@ def get_downloads(html):
 
     return downloads
 
+client = xmlrpclib.ServerProxy('http://pypi.python.org/pypi')
 
 @filecache(3 * 24 * 60 * 60)
-def get_package_info(url):
-    html = urlopen(url).read()
-
-    titles = re.findall(r'<h1>(.*?)</h1>', html)
-    name = titles[0]
+def get_package_info(name):
+    release_list = client.package_releases(name, True)
     
-    if 'Programming Language :: Python :: 3' in html:
-        py3 = True
-    else:
-        py3 = False
-
-    downloads = get_downloads(html)
+    downloads = 0
+    py3 = False
+    for release in release_list:
+        urls_metadata_list = client.release_urls(name, release)
+        release_metadata = client.release_data(name, release)
+        url = release_metadata['package_url']
+        
+        for url_metadata in urls_metadata_list:
+            downloads += url_metadata['downloads']
+            if 'Programming Language :: Python :: 3' in release_metadata['classifiers']:
+                py3 = True
+    
 
     info = pkg_info(py3=py3, downloads=downloads, name=name, url=url)
 
     return info
+
     
 def get_packages():
-    rows = get_rows()
-    for row in rows:
-        url = get_url(row)
-        
+    package_names = client.list_packages()
+    
+    for pkg in package_names:
         try:
-            info = get_package_info(base_url + url)
+            info = get_package_info(pkg)
         except Exception, e:
-            print(url)
+            print(pkg)
             print(e)
             continue
             
         print info
         yield info
+
 
 def build_html(packages_list):
     total_html = '''<table><tr><th>Package</th><th>Downloads</th></tr>%s</table>'''
@@ -103,12 +121,14 @@ def build_html(packages_list):
 
     return total_html % '\n'.join(rows)
 
+
 def count_good(packages_list):
     good = 0
     for package in packages_list:
         if package.py3:
             good += 1
     return good
+
 
 def remove_version_number(pkg_name):
     return re.findall(r'^(.*) [^ ]+$', pkg_name)[0]
@@ -120,8 +140,9 @@ def remove_irrelevant_packages(packages):
     to_ignore = 'multiprocessing', 'simplejson', 'argparse', 'uuid'
     for pkg in packages:
         # get the package name assuming the version number has no spaces in it
-        name_no_ver = remove_version_number(pkg.name)
-        if name_no_ver in to_ignore:
+        #name_no_ver = remove_version_number(pkg.name)
+        #if name_no_ver in to_ignore:
+        if pkg.name in to_ignore:
             continue
         else:
             yield pkg
@@ -146,7 +167,8 @@ def aggregate_multiple_versions(packages):
 def main():
     packages = get_packages()
     packages = remove_irrelevant_packages(packages)
-    packages = aggregate_multiple_versions(packages)
+    #packages = remove_irrelevant_packages(packages)
+    #packages = aggregate_multiple_versions(packages)
     packages = list(packages)
     def get_downloads(x): return x.downloads
     packages.sort(key=get_downloads)
