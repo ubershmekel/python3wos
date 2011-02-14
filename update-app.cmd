@@ -1,2 +1,0 @@
-
-..\..\appcfg.py update "%CD%"
