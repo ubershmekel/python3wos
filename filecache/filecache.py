@@ -79,6 +79,7 @@ def filecache(seconds_of_validity):
             # store in cache
             # NOTE: no need to __db.sync() because there was no mutation
             function.__db[key] = __retval(_time.time(), _pickle.dumps(retval))
+            function.__db.sync()
             
             return retval
 

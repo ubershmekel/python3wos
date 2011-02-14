@@ -148,8 +148,8 @@ b.border-b {
     }
 b.border-c { 
     -webkit-transform: scale(2.5) rotate(45deg); -webkit-transform-origin: 80% 100%;
-    -moz-transform: scale(2.5) rotate(-45deg); -moz-transform-origin: 80% 100%;
-    -o-transform: scale(2.5) rotate(-45deg); -o-transform-origin: 80% 100%;
+    -moz-transform: scale(2.5) rotate(45deg); -moz-transform-origin: 80% 100%;
+    -o-transform: scale(2.5) rotate(45deg); -o-transform-origin: 80% 100%;
     left: -10em; top: 0;
     }
 b.border-d {
@@ -183,7 +183,7 @@ table a:hover { color: #306; }
 th { background-color: #000; color: #FFF; }
 .py3False, .red {
     background-color: #A11;
-    }
+}
 .py3True, .green {
     background-color: #1A1;
     background-image: -webkit-gradient(
@@ -194,11 +194,11 @@ th { background-color: #000; color: #FFF; }
         color-stop(0.88, rgb(15,190,15))
     );
     background-image: -moz-linear-gradient(
-        right bottom,
+        center bottom,
         rgb(26,128,0) 0%,
-        rgb(26,255,5) 88%
+        rgb(15,190,15) 88%
     );
-    }
+}
 
 
 ul { list-style: none;}

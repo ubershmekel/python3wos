@@ -110,8 +110,18 @@ def count_good(packages_list):
             good += 1
     return good
 
+def remove_irrelevant_packages(packages):
+    to_ignore = 'multiprocessing', 'simplejson', 'argparse', 'uuid'
+    for pkg in packages:
+        # get the package name assuming the version number has no spaces in it
+        name_no_ver = re.findall(r'^(.*) [^ ]+$', pkg.name)[0]
+        if name_no_ver in to_ignore:
+            continue
+        else:
+            yield pkg
+
 def main():
-    packages = list(get_packages())
+    packages = list(remove_irrelevant_packages(get_packages()))
     def get_downloads(x): return x.downloads
     packages.sort(key=get_downloads)
 
