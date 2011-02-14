@@ -110,18 +110,44 @@ def count_good(packages_list):
             good += 1
     return good
 
+def remove_version_number(pkg_name):
+    return re.findall(r'^(.*) [^ ]+$', pkg_name)[0]
+    
+def remove_version_number_url(url):
+    return re.findall(r'^(.*)/[^/]+$', url)[0]
+
 def remove_irrelevant_packages(packages):
     to_ignore = 'multiprocessing', 'simplejson', 'argparse', 'uuid'
     for pkg in packages:
         # get the package name assuming the version number has no spaces in it
-        name_no_ver = re.findall(r'^(.*) [^ ]+$', pkg.name)[0]
+        name_no_ver = remove_version_number(pkg.name)
         if name_no_ver in to_ignore:
             continue
         else:
             yield pkg
 
+def aggregate_multiple_versions(packages):
+    unique_packages = {}
+    for pkg in packages:
+        new_name = remove_version_number(pkg.name)
+        new_url = remove_version_number_url(pkg.url)
+        # pkg is an immutable tuple so you need to make a new instance
+        pkg = pkg._replace(name=new_name, url=new_url)
+        if pkg.name in unique_packages:
+            old_pkg = unique_packages[pkg.name]
+            new_downloads = old_pkg.downloads + pkg.downloads
+            unique_packages[pkg.name] = old_pkg._replace(downloads=new_downloads)
+        else:
+            unique_packages[pkg.name] = pkg
+    
+    return unique_packages.values()
+        
+
 def main():
-    packages = list(remove_irrelevant_packages(get_packages()))
+    packages = get_packages()
+    packages = remove_irrelevant_packages(packages)
+    packages = aggregate_multiple_versions(packages)
+    packages = list(packages)
     def get_downloads(x): return x.downloads
     packages.sort(key=get_downloads)
 
