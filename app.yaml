@@ -17,5 +17,6 @@ handlers:
 
 skip_files:
 - .*\.cache.*
+- .*\.log
 - .*\.svn
 - .*\.cmd

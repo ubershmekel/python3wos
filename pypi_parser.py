@@ -76,7 +76,7 @@ def count_good(packages_list):
     return good
 
 def remove_irrelevant_packages(packages):
-    to_ignore = 'multiprocessing', 'simplejson', 'argparse', 'uuid'
+    to_ignore = 'multiprocessing', 'simplejson', 'argparse', 'uuid', 'setuptools'
     for pkg in packages:
         if pkg.name in to_ignore:
             continue
