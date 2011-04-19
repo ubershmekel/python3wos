@@ -11,6 +11,10 @@ handlers:
 - url: /static
   static_dir: static
 
+- url: /tasks/.*
+  script: pypi_cron.py
+  login: admin
+
 - url: /.*
   script: python3wos.py
   secure: optional
