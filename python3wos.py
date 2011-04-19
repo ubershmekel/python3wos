@@ -1,3 +1,7 @@
+
+from google.appengine.dist import use_library
+use_library('django', '0.96')
+
 import os
 from google.appengine.ext.webapp import template
 import cgi
@@ -7,6 +11,7 @@ from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.ext import db
 from google.appengine.api import mail
+from google.appengine.api import memcache
 
 from PypiPackage import Package
 
@@ -56,9 +61,16 @@ def build_data():
 
 class DatabaseMainPage(webapp.RequestHandler):
     def get(self):
-        template_values = build_data()
-        path = os.path.join(os.path.dirname(__file__), 'index_db.html')
-        self.response.out.write(template.render(path, template_values))
+        HTML_CACHE_KEY = "WOShtml"
+        html = memcache.get(HTML_CACHE_KEY)
+        if html is None:
+            path = os.path.join(os.path.dirname(__file__), 'index_db.html')
+            template_values = build_data()
+            html = template.render(path, template_values)
+            # 5 hour cache
+            memcache.add(HTML_CACHE_KEY, html, 60 * 60 * 5)
+        
+        self.response.out.write(html)
 
 application = webapp.WSGIApplication(
                                      [
