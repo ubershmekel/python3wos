@@ -19,7 +19,7 @@ def update_list_of_packages():
         if name in TO_IGNORE:
             continue
         query = db.GqlQuery("SELECT * FROM Package WHERE name = :name", name=name)
-        if query.count() == 0:
+        if len(list(query)) == 0:
             p = Package(name=name)
             p.put()
         
@@ -68,13 +68,34 @@ class EraseToIgnore(webapp.RequestHandler):
                 pkg.delete()
 
 
-
+class EraseDups(webapp.RequestHandler):
+    def get(self):
+        packages = db.GqlQuery("SELECT * FROM Package")
+        done_already = set()
+        for pkg in packages:
+            if pkg.name in done_already:
+                continue
+            query = db.GqlQuery("SELECT * FROM Package WHERE name = :name", name=pkg.name)
+            dups = list(query)
+            if len(dups) > 1:
+                self.response.out.write(pkg.name + '\r\n')
+                best_item = dups[0]
+                best_i = 0
+                for i, item in enumerate(dups):
+                    if best_item < item.timestamp:
+                        best_i = i
+                        best_item = item
+                    for i in range(len(dups)):
+                        if i != best_i:
+                            dups[i].delete()
+            done_already.add(pkg.name)
 
 application = webapp.WSGIApplication(
                                      [
                                      ('/tasks/update', CronUpdate),
                                      ('/tasks/package_list', PackageList),
                                      ('/tasks/erase_to_ignore', EraseToIgnore),
+                                     ('/tasks/erase_dups', EraseDups),
                                       ],
                                      debug=True)
 

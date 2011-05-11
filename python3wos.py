@@ -40,11 +40,15 @@ def build_data():
     good = 0
     packages_list = list(packages)
     total = len(packages_list)
+    min_time = None
     for pkg in packages_list:
         if pkg.py3:
             good += 1
-    # note that count.txt contains something akin to '13/100' so the '.0'
-    # is a hack to force float division. Pardon my hackery.
+        if min_time is None:
+            min_time = pkg.timestamp
+        elif pkg.timestamp is not None and pkg.timestamp < min_time:
+            min_time = pkg.timestamp
+    
     status = 1.0 * good / total
     if status < 0.5:
         title = 'Python 3 Wall of Shame'
@@ -55,6 +59,7 @@ def build_data():
         'title': title,
         'packages': packages_list,
         'count': "%d/%d" % (good, total),
+        'min_time': min_time,
         }
     return template_values
 
