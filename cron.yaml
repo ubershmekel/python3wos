@@ -1,0 +1,8 @@
+cron:
+- description: daily update job
+  url: /tasks/update
+  schedule: every 2 minutes
+
+- description: weekly update list of packages
+  url: /tasks/package_list
+  schedule: every sunday 09:00

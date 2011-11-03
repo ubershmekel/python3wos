@@ -15,6 +15,8 @@ from google.appengine.api import memcache
 
 from PypiPackage import Package
 
+HTML_CACHE_KEY = "WOShtml"
+
 class MainPage(webapp.RequestHandler):
     def get(self):
         count = open('count.txt').read()
@@ -66,7 +68,6 @@ def build_data():
 
 class DatabaseMainPage(webapp.RequestHandler):
     def get(self):
-        HTML_CACHE_KEY = "WOShtml"
         html = memcache.get(HTML_CACHE_KEY)
         if html is None:
             path = os.path.join(os.path.dirname(__file__), 'index_db.html')

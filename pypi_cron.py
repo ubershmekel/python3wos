@@ -90,12 +90,21 @@ class EraseDups(webapp.RequestHandler):
                             dups[i].delete()
             done_already.add(pkg.name)
 
+class ClearCache(webapp.RequestHandler):
+    def get(self):
+        from google.appengine.api import memcache
+        from python3wos import HTML_CACHE_KEY
+        self.response.out.write("clearing cache")
+        result = memcache.delete(HTML_CACHE_KEY)
+        self.response.out.write("result: %s" % result)
+
 application = webapp.WSGIApplication(
                                      [
                                      ('/tasks/update', CronUpdate),
                                      ('/tasks/package_list', PackageList),
                                      ('/tasks/erase_to_ignore', EraseToIgnore),
                                      ('/tasks/erase_dups', EraseDups),
+                                     ('/tasks/clear_cache', ClearCache),
                                       ],
                                      debug=True)
 
