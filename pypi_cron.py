@@ -10,7 +10,7 @@ import pypi_parser
 
 from PypiPackage import Package
 
-TO_IGNORE = 'multiprocessing', 'simplejson', 'argparse', 'uuid', 'setuptools'
+TO_IGNORE = 'multiprocessing', 'simplejson', 'argparse', 'uuid', 'setuptools', 'Jinja'
 
 def update_list_of_packages():
     package_names = pypi_parser.get_list_of_packages()

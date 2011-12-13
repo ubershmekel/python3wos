@@ -17,24 +17,6 @@ from PypiPackage import Package
 
 HTML_CACHE_KEY = "WOShtml"
 
-class MainPage(webapp.RequestHandler):
-    def get(self):
-        count = open('count.txt').read()
-        # note that count.txt contains something akin to '13/100' so the '.0'
-        # is a hack to force float division. Pardon my hackery.
-        if eval(count + '.0') < 0.5:
-            title = 'Python 3 Wall of Shame'
-        else:
-            title = 'Python 3 Wall of Superpowers'
-        
-        template_values = {
-            'title': title,
-            'results_table': open('results.html').read(),
-            'date': open('date.txt').read(),
-            'count': count,
-            }
-        path = os.path.join(os.path.dirname(__file__), 'index.html')
-        self.response.out.write(template.render(path, template_values))
 
 def build_data():
     packages = db.GqlQuery("SELECT * FROM Package ORDER BY downloads DESC LIMIT 200")
@@ -51,7 +33,11 @@ def build_data():
         elif pkg.timestamp is not None and pkg.timestamp < min_time:
             min_time = pkg.timestamp
     
-    status = 1.0 * good / total
+    if total > 0:
+        status = 1.0 * good / total
+    else:
+        status = 0
+    
     if status < 0.5:
         title = 'Python 3 Wall of Shame'
     else:
@@ -80,8 +66,7 @@ class DatabaseMainPage(webapp.RequestHandler):
 
 application = webapp.WSGIApplication(
                                      [
-                                     ('/fromhtml', MainPage),
-                                     ('/', DatabaseMainPage),
+                                       ('/', DatabaseMainPage),
                                       ],
                                      debug=True)
 
