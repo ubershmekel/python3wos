@@ -3,6 +3,8 @@
 import os
 
 import webapp2
+from google.appengine.ext import webapp
+from google.appengine.ext.webapp.util import run_wsgi_app
 
 import main
 import pypi_cron
@@ -21,4 +23,8 @@ app = webapp2.WSGIApplication(
     debug=True)
 
 
+def main():
+    run_wsgi_app(app)
 
+if __name__ == "__main__":
+    main()
