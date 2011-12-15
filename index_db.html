@@ -46,7 +46,23 @@
         </p>
         <table><tr><th>Package</th><th>Downloads</th></tr>
         {% for package in packages %}
-            <tr class="py3{{package.py3}}" id="{{package.name}}"><td><a href="{{package.url}}" timestamp="{{package.timestamp}}">{{package.name}}</a></td><td>{{package.downloads}}</td></tr>
+            {% if package.equivalent_url %}
+                <tr class="py3True" id="{{package.name}}">
+                    <td>
+                        <a href="{{package.url}}" timestamp="{{package.timestamp}}">{{package.name}}</a>
+                        (<a href="{{package.equivalent_url}}">py3k</a>)
+                    </td>
+            {% else %}
+                <tr class="py3{{package.py3}}" id="{{package.name}}">
+                    <td>
+                        <a href="{{package.url}}" timestamp="{{package.timestamp}}">{{package.name}}</a>
+                        {% if package.py2only %}
+                            <img src="static/lock.png" alt="Forever python2" title="The maintainers of this package have declared it will work only on Python 2 for the foreseeable future using the &quot;Programming Language :: Python :: 2 :: Only&quot; classifier."/>
+                        {% endif %}
+                    </td>
+            {% endif %}
+                    <td>{{package.downloads}}</td>
+            </tr>
         {% endfor %}
         </table>
 

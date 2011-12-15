@@ -1,7 +1,8 @@
 application: python3wos
 version: 1
-runtime: python
+runtime: python27
 api_version: 1
+threadsafe: true
 
 handlers:
 - url: /robots.txt
@@ -12,11 +13,11 @@ handlers:
   static_dir: static
 
 - url: /tasks/.*
-  script: pypi_cron.py
+  script: wsgi.app
   login: admin
 
 - url: /.*
-  script: python3wos.py
+  script: wsgi.app
   secure: optional
 
 skip_files:

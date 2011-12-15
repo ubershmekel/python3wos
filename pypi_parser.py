@@ -1,5 +1,6 @@
 
 #from urllib.request import urlopen
+import logging
 from urllib import urlopen
 import xmlrpclib
 import pprint
@@ -7,13 +8,14 @@ import re
 import os
 import datetime
 
+import config
 
 base_url = 'http://pypi.python.org'
-pkg_list_url = base_url + '/pypi?%3Aaction=index'
 
 how_many_to_chart = 200
 
-is_app_engine = os.environ['SERVER_SOFTWARE'].startswith('Development') or os.environ['SERVER_SOFTWARE'].startswith('Google')
+is_app_engine = config.GAE
+
 
 if is_app_engine:
     from google.appengine.api import urlfetch
@@ -64,6 +66,7 @@ def get_package_info(name):
     
     downloads = 0
     py3 = False
+    py2only = False
     url = 'http://pypi.python.org/pypi/' + name
     for release in release_list:
         urls_metadata_list = CLIENT.release_urls(name, release)
@@ -73,11 +76,21 @@ def get_package_info(name):
         for url_metadata in urls_metadata_list:
             downloads += url_metadata['downloads']
             # to avoid checking for 3.1, 3.2 etc, lets just str the classifiers
-            if 'Programming Language :: Python :: 3' in str(release_metadata['classifiers']):
+            classifiers = str(release_metadata['classifiers'])
+            if 'Programming Language :: Python :: 3' in classifiers:
                 py3 = True
+            elif 'Programming Language :: Python :: 2 :: Only' in classifiers:
+                py2only = True
 
     # NOTE: packages with no releases or no url's just throw an exception.
-    info = dict(py3=py3, downloads=downloads, name=name, url=url, timestamp=datetime.datetime.utcnow().isoformat())
+    info = dict(
+        py2only=py2only,
+        py3=py3,
+        downloads=downloads,
+        name=name,
+        url=url,
+        timestamp=datetime.datetime.utcnow().isoformat(),
+        )
 
     return info
 
@@ -85,8 +98,8 @@ if is_app_engine:
     def get_list_of_packages():
         return CLIENT.list_packages()
 else:
-    from filecache import filecache
-    @filecache(24 * 60 * 60)
+    #from filecache import filecache
+    #@filecache(24 * 60 * 60)
     def get_list_of_packages():
         return CLIENT.list_packages()
 

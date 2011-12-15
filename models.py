@@ -6,4 +6,6 @@ class Package(db.Model):
     timestamp = db.DateTimeProperty(auto_now_add=False)
     py3 = db.BooleanProperty()
     downloads = db.IntegerProperty()
+    equivalent_url = db.StringProperty(multiline=False)
+    py2only = db.BooleanProperty()
 
