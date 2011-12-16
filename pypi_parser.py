@@ -7,6 +7,7 @@ import pprint
 import re
 import os
 import datetime
+import traceback
 
 import config
 
@@ -34,8 +35,8 @@ if is_app_engine:
                                           payload=request_body,
                                           method=urlfetch.POST,
                                           headers={'Content-Type': 'text/xml'})
-            except:
-                msg = 'Failed to fetch %s' % url
+            except Exception, e:
+                msg = 'Failed to fetch %s, caused by: %s' % (url, traceback.format_exc())
                 logging.error(msg)
                 raise xmlrpclib.ProtocolError(host + handler, 500, msg, {})
 
@@ -76,7 +77,8 @@ def get_package_info(name):
                 break
             except xmlrpclib.ProtocolError, e:
                 # retry 3 times
-                logging.error("retry %s xmlrpclib: %s" % (i, e))
+                strace = traceback.format_exc()
+                logging.error("retry %s xmlrpclib: %s" % (i, strace))
         url = release_metadata['package_url']
         
         for url_metadata in urls_metadata_list:

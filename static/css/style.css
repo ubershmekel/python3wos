@@ -39,9 +39,6 @@ body, select, input, textarea {   color: #444; }
 h1,h2,h3,h4,h5,h6 { font-weight: bold; }
 html { overflow-y: scroll; }
 
-a:hover, a:active { outline: none; }
-a, a:active, a:visited { color: #c0c0c0; }
-a:hover { color: #F60; }
 
 ul, ol { margin-left: 1.8em; }
 ol { list-style-type: decimal; }
@@ -179,7 +176,13 @@ h1 { font-size: 6em; line-height: 1.5; text-align: center; cursor: default; }
 table { margin: 2em auto 0 auto; font-weight: bold; color: #000; }
 td { padding: 1em; }
 table a { color: #FFF; text-decoration:none; }
-table a:hover { color: #306; }
+table a:hover { color: #FFF; text-decoration: underline; }
+table a:visited {color: #FFF; }
+
+a:hover, a:active { outline: none; }
+a, a:active, a:visited { color: #c0c0c0; }
+a:hover { color: #F60; }
+
 th { background-color: #000; color: #FFF; }
 .py3False, .red {
     background-color: #A11;
