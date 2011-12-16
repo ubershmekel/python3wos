@@ -2,21 +2,24 @@ import os
 import datetime
 import traceback
 
-import webapp2
-#from google.appengine.ext import webapp
+#import webapp2
+from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.ext import db
+from google.appengine.api import memcache
 
 import pypi_parser
 from models import Package
 import config
 
-UPDATE_AT_A_TIME = 10
+UPDATE_AT_A_TIME = 8
 
 if config.DEV:
     # faster when developing
     UPDATE_AT_A_TIME = 2
 
+
+DB_STEPS = 400
 
 #TO_IGNORE = 'multiprocessing', 'simplejson', 'argparse', 'uuid', 'setuptools', 'Jinja', 'unittest2'
 EQUIVALENTS = {
@@ -34,22 +37,52 @@ TO_IGNORE = 'setuptools', 'Jinja',
 
 
 def fix_equivalence(pkg):
-    pkg.equivalent_url = EQUIVALENTS.get(name, '')    
+    pkg.equivalent_url = EQUIVALENTS.get(pkg.name, '')    
 
+
+PACKAGES_CACHE_KEY = 'packages_names'
+PACKAGES_CHECKED_INDEX = 'packages_index'
 
 def update_list_of_packages():
-    package_names = pypi_parser.get_list_of_packages()
+    package_names = memcache.get(PACKAGES_CACHE_KEY)
+    package_index = memcache.get(PACKAGES_CHECKED_INDEX)
+    
+    
+    if package_index is None:
+        package_index = 0
+    
+    if package_names is None:
+        package_names = pypi_parser.get_list_of_packages()
+        memcache.add(PACKAGES_CACHE_KEY, package_names, 60 * 60 * 24)
 
-    for name in package_names:
+    for name in package_names[package_index:package_index + DB_STEPS]:
         if name in TO_IGNORE:
-            continue
-        query = db.GqlQuery("SELECT * FROM Package WHERE name = :name", name=name)
-        if len(list(query)) == 0:
-            p = Package(name=name)
-            p.put()
+            pass
+        else:
+            query = db.GqlQuery("SELECT __key__ FROM Package WHERE name = :name", name=name)
+            if len(list(query)) == 0:
+                p = Package(name=name)
+                p.put()
         
+        package_index += 1
+        if package_index % 5 == 0:
+            memcache.set(PACKAGES_CHECKED_INDEX, package_index, 60 * 60 * 24)
+            
+    if package_index == len(package_names):
+        return -1
+    
+    return package_index
 
-class CronUpdate(webapp2.RequestHandler):
+def update_package_info(pkg):
+    info = pypi_parser.get_package_info(pkg.name)
+    info['timestamp'] = datetime.datetime.utcnow()
+    for key, value in info.items():
+        setattr(pkg, key, value)
+    fix_equivalence(pkg)
+    pkg.put()
+
+
+class CronUpdate(webapp.RequestHandler):
     def get(self):
         self.response.headers['Content-Type'] = 'text/plain'
         self.response.out.write('\r\n')
@@ -63,30 +96,36 @@ class CronUpdate(webapp2.RequestHandler):
         for pkg in packages_list:
             self.response.out.write(pkg.name)
             try:
-                info = pypi_parser.get_package_info(pkg.name)
+                update_package_info(pkg)
             except Exception, e:
                 self.response.out.write(" - %s" % e)
                 strace = traceback.format_exc()
                 self.response.out.write(strace)
-            else:
-                info_dict = info
-                info_dict['timestamp'] = datetime.datetime.utcnow()
-                for key, value in info_dict.items():
-                    setattr(pkg, key, value)
-                fix_equivalence(pkg)
-                pkg.put()
+                
             
             self.response.out.write("\r\n")
             
 
-class PackageList(webapp2.RequestHandler):
+class PackageList(webapp.RequestHandler):
     def get(self):
-        self.response.out.write("updating package list")
-
+        from google.appengine.ext.webapp import template
+        #self.response.out.write("updating package list")
         # get outdated package infos
-        update_list_of_packages()
+        i = update_list_of_packages()
+        self.response.out.write("%d" % i)
+        if i == -1:
+            next_url = ''
+        else:
+            next_url = '#'
+        context = {
+            'title': 'Updating package list',
+            'current_name': str(i),
+            'next_name': str(i + DB_STEPS),
+            'next_url': next_url,
+        }
+        self.response.out.write(template.render('redirect.html', context))
 
-class EraseToIgnore(webapp2.RequestHandler):
+class EraseToIgnore(webapp.RequestHandler):
     def get(self):
         self.response.out.write("erasing packages")
         for name in TO_IGNORE:
@@ -95,7 +134,7 @@ class EraseToIgnore(webapp2.RequestHandler):
                 pkg.delete()
 
 
-class EraseDups(webapp2.RequestHandler):
+class EraseDups(webapp.RequestHandler):
     def get(self):
         packages = db.GqlQuery("SELECT * FROM Package")
         done_already = set()
@@ -117,17 +156,17 @@ class EraseDups(webapp2.RequestHandler):
                             dups[i].delete()
             done_already.add(pkg.name)
 
-class ClearCache(webapp2.RequestHandler):
+class ClearCache(webapp.RequestHandler):
     def get(self):
         from google.appengine.api import memcache
-        from main import HTML_CACHE_KEY
+        from config import HTML_CACHE_KEY
         self.response.out.write("clearing cache")
         result = memcache.delete(HTML_CACHE_KEY)
         self.response.out.write("result: %s" % result)
 
 
 # Request handler for the URL /update_datastore
-class update_models(webapp2.RequestHandler):
+class update_models(webapp.RequestHandler):
     def get(self):
         import urllib
         from google.appengine.ext.webapp import template
@@ -139,7 +178,7 @@ class update_models(webapp2.RequestHandler):
             name = pkg.name
 
         q = Package.gql('WHERE name <= :1 ORDER BY name DESC', name)
-        items = q.fetch(limit=400)
+        items = q.fetch(limit=DB_STEPS)
         if len(items) > 1:
             next_name = items[-1].name
             next_url = '/tasks/%s?name=%s' % (url_n_template, urllib.quote(next_name))
@@ -161,3 +200,11 @@ class update_models(webapp2.RequestHandler):
         }
         self.response.out.write(template.render('%s.html' % url_n_template, context))
 
+class update_single(webapp.RequestHandler):
+    def get(self):
+        name = self.request.get('name', None)
+        q = Package.gql('WHERE name = :1', name)
+        items = q.fetch(limit=1)
+        pkg = items[0]
+        update_package_info(pkg)
+        self.response.out.write('great success')

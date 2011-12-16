@@ -40,7 +40,7 @@ h1,h2,h3,h4,h5,h6 { font-weight: bold; }
 html { overflow-y: scroll; }
 
 a:hover, a:active { outline: none; }
-a, a:active, a:visited { color: #D0C8A0; }
+a, a:active, a:visited { color: #c0c0c0; }
 a:hover { color: #F60; }
 
 ul, ol { margin-left: 1.8em; }

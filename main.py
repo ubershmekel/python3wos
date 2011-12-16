@@ -2,13 +2,13 @@
 
 import os
 
-import webapp2
+#import webapp2
 
 from google.appengine.dist import use_library
 use_library('django', '0.96')
 
 from google.appengine.ext.webapp import template
-#from google.appengine.ext import webapp
+from google.appengine.ext import webapp
 #from google.appengine.ext.webapp.util import login_required
 from google.appengine.api import users
 from google.appengine.ext import db
@@ -57,7 +57,7 @@ def get_html():
     html = template.render(path, template_values)
     return html
 
-class DatabaseMainPage(webapp2.RequestHandler):
+class DatabaseMainPage(webapp.RequestHandler):
     def get(self):
         nocache = self.request.get('nocache', None)
         if nocache is not None:

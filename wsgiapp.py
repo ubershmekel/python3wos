@@ -2,14 +2,14 @@
 
 import os
 
-import webapp2
+#import webapp2
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 
 import main
 import pypi_cron
 
-app = webapp2.WSGIApplication(
+app = webapp.WSGIApplication(
     [
         ('/', main.DatabaseMainPage),
 
@@ -19,6 +19,7 @@ app = webapp2.WSGIApplication(
         ('/tasks/erase_dups', pypi_cron.EraseDups),
         ('/tasks/clear_cache', pypi_cron.ClearCache),
         ('/tasks/update_models', pypi_cron.update_models),
+        ('/tasks/update_single', pypi_cron.update_single),
     ],
     debug=True)
 

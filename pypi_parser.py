@@ -69,8 +69,14 @@ def get_package_info(name):
     py2only = False
     url = 'http://pypi.python.org/pypi/' + name
     for release in release_list:
-        urls_metadata_list = CLIENT.release_urls(name, release)
-        release_metadata = CLIENT.release_data(name, release)
+        for i in range(3):
+            try:
+                urls_metadata_list = CLIENT.release_urls(name, release)
+                release_metadata = CLIENT.release_data(name, release)
+                break
+            except xmlrpclib.ProtocolError, e:
+                # retry 3 times
+                logging.error("retry %s xmlrpclib: %s" % (i, e))
         url = release_metadata['package_url']
         
         for url_metadata in urls_metadata_list:
