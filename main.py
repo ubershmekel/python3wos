@@ -26,7 +26,7 @@ def build_data():
     total = len(packages_list)
     min_time = None
     for pkg in packages_list:
-        if pkg.py3 or pkg.equivalent_url:
+        if pkg.py3 or pkg.equivalent_url or pkg.force_green:
             good += 1
         if min_time is None:
             min_time = pkg.timestamp

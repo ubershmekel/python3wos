@@ -1,0 +1,20 @@
+
+.red {
+    background-color: #A11;
+}
+.py3True, .py3False, .green {
+    background-color: #1A1;
+    background-image: -webkit-gradient(
+        linear,
+        50 bottom,
+        50 top,
+        color-stop(0, rgb(26,128,0)),
+        color-stop(0.88, rgb(15,190,15))
+    );
+    background-image: -moz-linear-gradient(
+        center bottom,
+        rgb(26,128,0) 0%,
+        rgb(15,190,15) 88%
+    );
+}
+

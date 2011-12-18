@@ -8,4 +8,5 @@ class Package(db.Model):
     downloads = db.IntegerProperty()
     equivalent_url = db.StringProperty(multiline=False)
     py2only = db.BooleanProperty()
+    force_green = db.BooleanProperty()
 

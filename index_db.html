@@ -46,11 +46,15 @@
         </p>
         <table><tr><th>Package</th><th>Downloads</th></tr>
         {% for package in packages %}
-            {% if package.equivalent_url %}
+            {% if package.equivalent_url or package.force_green %}
                 <tr class="py3True" id="{{package.name}}">
                     <td>
                         <a href="{{package.url}}" timestamp="{{package.timestamp}}">{{package.name}}</a>
-                        (<a href="{{package.equivalent_url}}">py3k</a>)
+                        {% if package.force_green %}
+                            <img src="static/redtri.png" alt="Wrong trove classifier" title="This package isn't classified as Python 3 compatible on PyPI, please contact its maintainers to fix this."/>
+                        {% else %}
+                            (<a href="{{package.equivalent_url}}">py3k</a>)
+                        {% endif %}
                     </td>
             {% else %}
                 <tr class="py3{{package.py3}}" id="{{package.name}}">
@@ -134,6 +138,37 @@
     g.src = ('https:' == location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
     s.parentNode.insertBefore(g, s);
    })(document, 'script');
+  </script>
+
+
+  <script>
+    function getParameterByName(name)
+    {
+        name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
+        var regexS = "[\\?&]" + name + "=([^&#]*)";
+        var regex = new RegExp(regexS);
+        var results = regex.exec(window.location.href);
+        if(results == null) {
+            return "";
+        } else {
+            return decodeURIComponent(results[1].replace(/\+/g, " "));
+        }
+    }
+    
+    if ("1" == getParameterByName("pygmalion")) {
+        var cssId = 'myCssId';  // you could encode the css path itself to generate id..
+        if (!document.getElementById(cssId))
+        {
+            var head  = document.getElementsByTagName('head')[0];
+            var link  = document.createElement('link');
+            link.id   = cssId;
+            link.rel  = 'stylesheet';
+            link.type = 'text/css';
+            link.href = '/static/css/happy.css';
+            link.media = 'all';
+            head.appendChild(link);
+        }        
+    }
   </script>
   
 </body>

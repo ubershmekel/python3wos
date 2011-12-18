@@ -188,10 +188,15 @@ class update_models(webapp.RequestHandler):
         
         for current_pkg in items:
             # modify the model if needed here
-            fix_equivalence(current_pkg)
+            #fix_equivalence(current_pkg)
+            #current_pkg.py2only = False
             
-            current_pkg.py2only = False
+            if current_pkg.name in ('pylint', 'docutils'):
+                current_pkg.force_green = True
+            else:
+                current_pkg.force_green = False
             current_pkg.put()
+            # end of modify models
 
         context = {
             'current_name': name,
