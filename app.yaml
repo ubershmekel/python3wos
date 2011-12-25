@@ -1,4 +1,4 @@
-application: python3wos
+application: python3wos2
 version: 1
 runtime: python
 api_version: 1
@@ -13,11 +13,11 @@ handlers:
   static_dir: static
 
 - url: /tasks/.*
-  script: wsgiapp.py
+  script: wsgi.app
   login: admin
 
 - url: /.*
-  script: wsgiapp.py
+  script: wsgi.app
   secure: optional
 
 skip_files:

@@ -184,9 +184,16 @@ a, a:active, a:visited { color: #c0c0c0; }
 a:hover { color: #F60; }
 
 th { background-color: #000; color: #FFF; }
+
+.py3None  {
+    background-color: #991;
+}
+
+
 .py3False, .red {
     background-color: #A11;
 }
+
 .py3True, .green {
     background-color: #1A1;
     background-image: -webkit-gradient(
