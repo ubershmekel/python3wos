@@ -158,10 +158,21 @@ b.border-d {
 
  
 h1, h2, h3, h4, h5 { font-weight: normal; text-transform: uppercase; }
+
 @font-face {
-    font-family: LeagueGothic;
-    src: url('/static/LeagueGothic.eot'); src:local("/static/fonts/LeagueGothic"), local("/static/fonts/LeagueGothic"), url('/static/fonts/LeagueGothic.otf') format("otf"), url('/static/fonts/LeagueGothic.ttf') format("truetype"), url('/static/fonts/LeagueGothic.svg') format("svg");
+    font-family: 'LeagueGothic';
+    src: url('/static/fonts/leaguegothic-webfont.eot');
+    src: url('/static/fonts/leaguegothic-webfont.eot?#iefix') format('embedded-opentype'),
+         url('/static/fonts/leaguegothic-webfont.woff') format('woff'),
+         url('/static/fonts/leaguegothic-webfont.ttf') format('truetype'),
+         url('/static/fonts/leaguegothic-webfont.svg#LeagueGothicRegular') format('svg');
+    font-weight: normal;
+    font-style: normal;
+
 }
+
+
+
 @font-face { font-family: "MolotRegular"; src: url('/static/Molot.eot'); src: local("/static/fonts/Molot"), local("/static/fonts/Molot"), url('/static/fonts/Molot.woff') format("woff"), url('/static/fonts/Molot.ttf') format("truetype"), url('/static/fonts/Molot.svg#Molot') format("svg"); }
 @font-face { font-family: "InsolentRegular"; src: url('/static/insolent.eot'); src: url('/static/fonts/insolent.woff') format('woff'), url('/static/fonts/insolent.ttf') format('truetype'), url('/static/fonts/insolent.svg#webfontD7S5Wv86') format('svg'); }
 h1, em, #body h3, #disqus_thread h3, h4 { font-family: "LeagueGothic", Arial, sans-serif; text-shadow: 1px 1px 0px #000, 2px 2px 0px #777, 3px 3px 0px #666, 4px 4px 0px #555, 5px 5px 0px #444, 6px 6px 0px #333, 7px 7px 0px #222; }   
