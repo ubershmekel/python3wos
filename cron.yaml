@@ -1,7 +1,7 @@
 cron:
 - description: daily update job
   url: /tasks/update
-  schedule: every 2 minutes
+  schedule: every 3 minutes
 
 - description: weekly update list of packages
   url: /tasks/package_list
