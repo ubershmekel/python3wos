@@ -80,6 +80,7 @@ def update_package_info(pkg):
         setattr(pkg, key, value)
     fix_equivalence(pkg)
     pkg.put()
+    return pkg
 
 
 class CronUpdate(webapp.RequestHandler):
@@ -210,6 +211,40 @@ class update_single(webapp.RequestHandler):
         name = self.request.get('name', None)
         q = Package.gql('WHERE name = :1', name)
         items = q.fetch(limit=1)
+        if len(items) == 0:
+            self.response.out.write('did not find "%s"' % name)
+            return
         pkg = items[0]
-        update_package_info(pkg)
-        self.response.out.write('great success')
+        pkg = update_package_info(pkg)
+        self.response.out.write(str(pkg))
+
+        
+
+def profile_main():
+    '''
+    To profile a function, assign a function to "to_profile_func".
+    
+    NOTE:  This isn't working for some reason...
+    '''
+    import cProfile, pstats, StringIO
+    prof = cProfile.Profile()
+    prof = prof.runctx("to_profile_func()", globals(), locals())
+    stream = StringIO.StringIO()
+    stats = pstats.Stats(prof, stream=stream)
+    stats.sort_stats("time")  # Or cumulative
+    stats.print_stats(80)  # 80 = how many to print
+    # The rest is optional.
+    # stats.print_callees()
+    # stats.print_callers()
+    logging.info("Profile data:\n%s", stream.getvalue())
+
+    
+to_profile_func = None
+#to_profile_func = update_list_of_packages
+
+if to_profile_func is not None:
+    to_profile_str = to_profile_func.__name__
+    globals()[to_profile_str] = profile_main
+
+
+

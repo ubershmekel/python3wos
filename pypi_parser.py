@@ -81,14 +81,15 @@ def get_package_info(name):
                 logging.error("retry %s xmlrpclib: %s" % (i, strace))
         url = release_metadata['package_url']
         
+        # to avoid checking for 3.1, 3.2 etc, lets just str the classifiers
+        classifiers = str(release_metadata['classifiers'])
+        if 'Programming Language :: Python :: 3' in classifiers:
+            py3 = True
+        elif 'Programming Language :: Python :: 2 :: Only' in classifiers:
+            py2only = True
+        
         for url_metadata in urls_metadata_list:
             downloads += url_metadata['downloads']
-            # to avoid checking for 3.1, 3.2 etc, lets just str the classifiers
-            classifiers = str(release_metadata['classifiers'])
-            if 'Programming Language :: Python :: 3' in classifiers:
-                py3 = True
-            elif 'Programming Language :: Python :: 2 :: Only' in classifiers:
-                py2only = True
 
     # NOTE: packages with no releases or no url's just throw an exception.
     info = dict(
