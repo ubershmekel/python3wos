@@ -69,39 +69,45 @@
             </tr>
         {% endfor %}
         </table>
-
     </div>
-    
+
+
     <footer>
-    <ul> 
-        <li> 
-            Written by <a href="http://uberpython.wordpress.com/">Yuv</a> aka ubershmekel.
-        </li>
-        <li>
-            Don't wait, start <a href="http://wiki.python.org/moin/PortingToPy3k/">porting code to Python 3</a>.
-        </li>
-		<li>
-			<a href="http://twitter.com/#!/Py3K_update">See who recently converted to python3.</a>
-		</li>
-        <li>
-            Get the source for this GAE app at <a href="http://code.google.com/p/python3wos/">google code</a>.
-        </li>
-        <li>
-            The wall updates almost once a day, see the timestamps in the html.
-        </li>
-        <li>
-            <a href="http://pypi.python.org/pypi/wxPython/">wxPython</a> and <a href="http://pypi.python.org/pypi/PIL">PIL</a> aren't on this chart because they don't host their downloads on PyPI.
-        </li>
-        <li>
-            Design <a href="http://www.reddit.com/r/Python/comments/fk4gs/the_python_3_wall_of_shame/c1giwbi">stolen</a> from <a href="http://html5boilerplate.com/">HTML5 Boilerplate</a>. 
-        </li>
-        <li>
-            If a module is red though it supports python 3 it's because they don't have the "Programming Language :: Python :: 3" tag. Consider contacting the maintainer to fix this.
-        </li>
-        <li>
-            Note that this subdomain's called "python3wos" - once the status goes beyond 50%, the title of the site automatically becomes "Python 3 Wall of Superpowers". I kid you not.
-        </li>
-    </ul>
+        <ul> 
+            <li> 
+                Written by <a href="http://uberpython.wordpress.com/">Yuv</a> aka ubershmekel.
+            </li>
+            <li>
+                Don't wait, start <a href="http://wiki.python.org/moin/PortingToPy3k/">porting code to Python 3</a>.
+            </li>
+            <li>
+                Get the source for this GAE app at <a href="http://code.google.com/p/python3wos/">google code</a>.
+            </li>
+            <li>
+                The wall updates almost once a day, see the timestamps in the html.
+            </li>
+            <li>
+                <a href="http://pypi.python.org/pypi/wxPython/">wxPython</a> and <a href="http://pypi.python.org/pypi/PIL">PIL</a> aren't on this chart because they don't host their downloads on PyPI.
+            </li>
+            <li>
+                Design <a href="http://www.reddit.com/r/Python/comments/fk4gs/the_python_3_wall_of_shame/c1giwbi">stolen</a> from <a href="http://html5boilerplate.com/">HTML5 Boilerplate</a>. 
+            </li>
+            <li>
+                If a module is red though it supports python 3 it's because they don't have the "Programming Language :: Python :: 3" tag. Consider contacting the maintainer to fix this.
+            </li>
+            <li>
+                Note that this subdomain's called "python3wos" - once the status goes beyond 50%, the title of the site automatically becomes "Python 3 Wall of Superpowers". I kid you not.
+            </li>
+        </ul>
+        <div class="summary_box" style="margin:2em auto;width:20px;">
+        {% for package in packages %}
+            {% if package.equivalent_url or package.force_green %}
+                <div class="py3True" style="height:1px;"></div>
+            {% else %}
+                <div class="py3{{package.py3}}" style="height:1px;"></div>
+            {% endif %}
+        {% endfor %}
+        </div>
     </footer>
   </div> <!-- end of #container -->
 
