@@ -37,7 +37,8 @@ TO_IGNORE = 'setuptools', 'Jinja',
 
 
 def fix_equivalence(pkg):
-    pkg.equivalent_url = EQUIVALENTS.get(pkg.name, '')    
+    if pkg.name in EQUIVALENTS:
+        pkg.equivalent_url = EQUIVALENTS[pkg.name]
 
 
 PACKAGES_CACHE_KEY = 'packages_names'
