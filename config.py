@@ -7,13 +7,16 @@ HTML_CACHE_KEY = "WOShtml"
 DEV = False
 LIVE = False
 
-if os.environ['SERVER_SOFTWARE'].startswith('Google'):
-    # remote google apps
-    LIVE = True
-elif os.environ['SERVER_SOFTWARE'].startswith('Development'):
-    # local dev server
-    # True sometimes works
-    DEV = True
+SERVER_SOFTWARE = 'SERVER_SOFTWARE'
+
+if SERVER_SOFTWARE in os.environ:
+    if os.environ[SERVER_SOFTWARE].startswith('Google'):
+        # remote google apps
+        LIVE = True
+    elif os.environ[SERVER_SOFTWARE].startswith('Development'):
+        # local dev server
+        # True sometimes works
+        DEV = True
 
 GAE = LIVE or DEV
 

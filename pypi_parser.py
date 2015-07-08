@@ -69,6 +69,7 @@ def get_package_info(name):
     py3 = False
     py2only = False
     url = 'http://pypi.python.org/pypi/' + name
+    most_recent = True
     for release in release_list:
         for i in range(3):
             try:
@@ -81,12 +82,14 @@ def get_package_info(name):
                 logging.error("retry %s xmlrpclib: %s" % (i, strace))
         url = release_metadata['package_url']
         
-        # to avoid checking for 3.1, 3.2 etc, lets just str the classifiers
-        classifiers = str(release_metadata['classifiers'])
-        if 'Programming Language :: Python :: 3' in classifiers:
-            py3 = True
-        elif 'Programming Language :: Python :: 2 :: Only' in classifiers:
-            py2only = True
+        if most_recent:
+            most_recent = False
+            # to avoid checking for 3.1, 3.2 etc, lets just str the classifiers
+            classifiers = str(release_metadata['classifiers'])
+            if 'Programming Language :: Python :: 3' in classifiers:
+                py3 = True
+            elif 'Programming Language :: Python :: 2 :: Only' in classifiers:
+                py2only = True
         
         for url_metadata in urls_metadata_list:
             downloads += url_metadata['downloads']
