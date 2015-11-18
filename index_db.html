@@ -65,7 +65,7 @@
                         {% endif %}
                     </td>
             {% endif %}
-                    <td>{{package.downloads}}</td>
+                    <td>{{package.downloads|stringformat:",d"}}</td>
             </tr>
         {% endfor %}
         </table>
