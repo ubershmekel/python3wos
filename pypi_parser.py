@@ -70,7 +70,12 @@ def get_package_info(name):
     py2only = False
     url = 'http://pypi.python.org/pypi/' + name
     most_recent = True
+
+    if len(release_list) == 0:
+        raise Exception("No releases or a pypi bug for: %s" % name)
+
     for release in release_list:
+        release_metadata = None
         for i in range(3):
             try:
                 urls_metadata_list = CLIENT.release_urls(name, release)
@@ -80,6 +85,10 @@ def get_package_info(name):
                 # retry 3 times
                 strace = traceback.format_exc()
                 logging.error("retry %s xmlrpclib: %s" % (i, strace))
+
+        if release_metadata is None:
+            raise Exception("Failed to fetch release metadata for release: %s" % release)
+
         url = release_metadata['package_url']
         
         if most_recent:
