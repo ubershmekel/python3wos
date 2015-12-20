@@ -23,11 +23,12 @@ DB_STEPS = 400
 
 #TO_IGNORE = 'multiprocessing', 'simplejson', 'argparse', 'uuid', 'setuptools', 'Jinja', 'unittest2'
 EQUIVALENTS = {
-    'multiprocessing': 'http://docs.python.org/py3k/library/multiprocessing.html',
-    'argparse': 'http://docs.python.org/py3k/library/argparse.html',
-    'uuid': 'http://docs.python.org/py3k/library/uuid.html',
-    'unittest2': 'http://docs.python.org/py3k/library/unittest.html',
-    'simplejson': 'http://docs.python.org/py3k/library/json.html',
+    'multiprocessing': 'https://docs.python.org/3/library/multiprocessing.html',
+    'argparse': 'https://docs.python.org/3/library/argparse.html',
+    'uuid': 'https://docs.python.org/3/library/uuid.html',
+    'unittest2': 'https://docs.python.org/3/library/unittest.html',
+    'simplejson': 'https://docs.python.org/3/library/json.html',
+    'futures': 'http://docs.python.org/py3k/library/concurrent.futures.html',
     }
 
 # the following have a dup on the list
