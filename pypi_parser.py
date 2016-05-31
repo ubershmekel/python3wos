@@ -21,6 +21,23 @@ is_app_engine = config.GAE
 if is_app_engine:
     from google.appengine.api import urlfetch
 
+    '''
+    `set_default_fetch_deadline` to avoid the following errors:
+    http://stackoverflow.com/questions/13051628/gae-appengine-deadlineexceedederror-deadline-exceeded-while-waiting-for-htt
+    
+    Failed to fetch http://pypi.python.org/pypi, caused by: Traceback (most recent call last):
+    File "/base/data/home/apps/s~python3wos2/1.389386800936840076/pypi_parser.py", line 37, in request
+        headers={'Content-Type': 'text/xml'})
+    File "/base/data/home/runtimes/python/python_lib/versions/1/google/appengine/api/urlfetch.py", line 271, in fetch
+        return rpc.get_result()
+    File "/base/data/home/runtimes/python/python_lib/versions/1/google/appengine/api/apiproxy_stub_map.py", line 613, in get_result
+        return self.__get_result_hook(self)
+    File "/base/data/home/runtimes/python/python_lib/versions/1/google/appengine/api/urlfetch.py", line 428, in _get_fetch_result
+        'Deadline exceeded while waiting for HTTP response from URL: ' + url)
+    DeadlineExceededError: Deadline exceeded while waiting for HTTP response from URL: http://pypi.python.org/pypi
+    '''
+    urlfetch.set_default_fetch_deadline(60)
+    
     class GAEXMLRPCTransport(object):
         """Handles an HTTP transaction to an XML-RPC server."""
 
@@ -182,8 +199,12 @@ def main():
     
     open('count.txt', 'w').write('%d/%d' % (count_good(top), len(top)))
     open('date.txt', 'w').write(datetime.datetime.now().isoformat())
+
+def test():
+    print(get_package_info('argparse'))
     
 if __name__ == '__main__':
-    main()
+    #main()
+    test()
 
     
