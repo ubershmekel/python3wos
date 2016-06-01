@@ -78,11 +78,14 @@ if is_app_engine:
 else:
     CLIENT = xmlrpclib.ServerProxy('http://pypi.python.org/pypi')
 
+class NoReleasesException(Exception):
+    pass
 
 def get_package_info(name):
     # Having to `lower` the name is a new requirement as of somewhere beteen 2015-12 and 2016-05.
     # Strange.
-    safe_name = name.lower()
+    # Maybe we don't need to `lower`? I'm confused.
+    safe_name = name
     release_list = CLIENT.package_releases(safe_name, True)
     
     downloads = 0
@@ -92,7 +95,7 @@ def get_package_info(name):
     most_recent = True
 
     if len(release_list) == 0:
-        raise Exception("No releases or a pypi bug for: %s" % safe_name)
+        raise NoReleasesException("No releases or a pypi bug for: %s" % safe_name)
 
     for release in release_list:
         release_metadata = None
@@ -210,7 +213,7 @@ def main():
     open('date.txt', 'w').write(datetime.datetime.now().isoformat())
 
 def test():
-    print(get_package_info('Rattail'))
+    print(get_package_info('Shinken'))
     
 if __name__ == '__main__':
     #main()

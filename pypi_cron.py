@@ -12,7 +12,7 @@ import pypi_parser
 from models import Package
 import config
 
-UPDATE_AT_A_TIME = 8
+UPDATE_AT_A_TIME = 18
 
 if config.DEV:
     # faster when developing
@@ -76,7 +76,14 @@ def update_list_of_packages():
     return package_index
 
 def update_package_info(pkg):
-    info = pypi_parser.get_package_info(pkg.name)
+    try:
+        info = pypi_parser.get_package_info(pkg.name)
+    except pypi_parser.NoReleasesException, e:
+        print(pkg)
+        print(e)
+        # If this happens because of a pypi bug - we might want to consider doing something more serious here
+        # TODO: figure this out better
+        info = {}
     info['timestamp'] = datetime.datetime.utcnow()
     for key, value in info.items():
         setattr(pkg, key, value)
