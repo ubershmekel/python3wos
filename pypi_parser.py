@@ -80,23 +80,26 @@ else:
 
 
 def get_package_info(name):
-    release_list = CLIENT.package_releases(name, True)
+    # Having to `lower` the name is a new requirement as of somewhere beteen 2015-12 and 2016-05.
+    # Strange.
+    safe_name = name.lower()
+    release_list = CLIENT.package_releases(safe_name, True)
     
     downloads = 0
     py3 = False
     py2only = False
-    url = 'http://pypi.python.org/pypi/' + name
+    url = 'http://pypi.python.org/pypi/' + safe_name
     most_recent = True
 
     if len(release_list) == 0:
-        raise Exception("No releases or a pypi bug for: %s" % name)
+        raise Exception("No releases or a pypi bug for: %s" % safe_name)
 
     for release in release_list:
         release_metadata = None
         for i in range(3):
             try:
-                urls_metadata_list = CLIENT.release_urls(name, release)
-                release_metadata = CLIENT.release_data(name, release)
+                urls_metadata_list = CLIENT.release_urls(safe_name, release)
+                release_metadata = CLIENT.release_data(safe_name, release)
                 break
             except xmlrpclib.ProtocolError, e:
                 # retry 3 times
@@ -144,16 +147,22 @@ else:
 def get_packages():
     package_names = get_list_of_packages()
     
+    exceptions = []
     for pkg in package_names:
         try:
             info = get_package_info(pkg)
         except Exception, e:
             print(pkg)
             print(e)
+            exceptions.append(e)
             continue
+            # raise exceptions later after you tried updating all of the packages.
             
         print info
         yield info
+    
+    for e in exceptions:
+        raise e
 
 
 def build_html(packages_list):
@@ -201,7 +210,7 @@ def main():
     open('date.txt', 'w').write(datetime.datetime.now().isoformat())
 
 def test():
-    print(get_package_info('argparse'))
+    print(get_package_info('Rattail'))
     
 if __name__ == '__main__':
     #main()

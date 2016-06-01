@@ -21,6 +21,7 @@ handlers:
   secure: optional
 
 skip_files:
+- .*\.deprecated
 - .*\.cache.*
 - .*\.log
 - .*\.svn
