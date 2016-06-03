@@ -28,7 +28,8 @@ EQUIVALENTS = {
     'uuid': 'https://docs.python.org/3/library/uuid.html',
     'unittest2': 'https://docs.python.org/3/library/unittest.html',
     'simplejson': 'https://docs.python.org/3/library/json.html',
-    'futures': 'http://docs.python.org/py3k/library/concurrent.futures.html',
+    'futures': 'http://docs.python.org/3/library/concurrent.futures.html',
+    'ipaddr': 'https://docs.python.org/3/library/ipaddress.html'
     'suds': 'https://pypi.python.org/pypi/suds-jurko',
     }
 
@@ -255,6 +256,3 @@ to_profile_func = None
 if to_profile_func is not None:
     to_profile_str = to_profile_func.__name__
     globals()[to_profile_str] = profile_main
-
-
-
