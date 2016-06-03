@@ -1,21 +1,11 @@
 
-
 import os
-
-#import webapp2
-
-from google.appengine.dist import use_library
-use_library('django', '0.96')
 
 from google.appengine.ext.webapp import template
 from google.appengine.ext import webapp
-#from google.appengine.ext.webapp.util import login_required
-from google.appengine.api import users
 from google.appengine.ext import db
-from google.appengine.api import mail
 from google.appengine.api import memcache
 
-from models import Package
 import config
 
 def build_data():

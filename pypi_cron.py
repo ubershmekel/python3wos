@@ -1,10 +1,9 @@
-import os
+import cPickle
+import zlib
 import datetime
 import traceback
 
-#import webapp2
 from google.appengine.ext import webapp
-from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.ext import db
 from google.appengine.api import memcache
 
@@ -12,7 +11,7 @@ import pypi_parser
 from models import Package
 import config
 
-UPDATE_AT_A_TIME = 18
+UPDATE_AT_A_TIME = 10
 
 if config.DEV:
     # faster when developing
@@ -45,17 +44,37 @@ def fix_equivalence(pkg):
 PACKAGES_CACHE_KEY = 'packages_names'
 PACKAGES_CHECKED_INDEX = 'packages_index'
 
+def compress(obj):
+    return zlib.compress(cPickle.dumps(obj))
+
+def decompress(compressed_bytes):
+    return cPickle.loads(zlib.decompress(compressed_bytes))
+
+def get_mcache_package_list():
+    buffer = memcache.get(PACKAGES_CACHE_KEY)
+    if buffer is None:
+        # for handling the empty cache
+        return None
+    if type(buffer) == list:
+        # for migrating the existing memcache
+        return buffer
+    # normal flow
+    return decompress(buffer)
+
+def set_mcache_package_list(package_names):
+    compressed_bytes = compress(package_names)
+    memcache.add(PACKAGES_CACHE_KEY, compressed_bytes, 60 * 60 * 24)
+
 def update_list_of_packages():
-    package_names = memcache.get(PACKAGES_CACHE_KEY)
+    package_names = get_mcache_package_list()
     package_index = memcache.get(PACKAGES_CHECKED_INDEX)
-    
-    
+
     if package_index is None:
         package_index = 0
     
     if package_names is None:
         package_names = pypi_parser.get_list_of_packages()
-        memcache.add(PACKAGES_CACHE_KEY, package_names, 60 * 60 * 24)
+        set_mcache_package_list(package_names)
 
     for name in package_names[package_index:package_index + DB_STEPS]:
         if name in TO_IGNORE:
@@ -91,30 +110,39 @@ def update_package_info(pkg):
     pkg.put()
     return pkg
 
+def update_handler(self, packages):
+    self.response.headers['Content-Type'] = 'text/plain'
+    self.response.out.write('\r\n')
+
+    packages_list = list(packages)
+    if len(packages_list) == 0:
+        update_list_of_packages()
+
+    for pkg in packages_list:
+        self.response.out.write(pkg.name)
+        try:
+            update_package_info(pkg)
+        except Exception, e:
+            self.response.out.write(" - %s" % e)
+            strace = traceback.format_exc()
+            self.response.out.write(strace)
+
+        self.response.out.write("\r\n")
+
 
 class CronUpdate(webapp.RequestHandler):
     def get(self):
-        self.response.headers['Content-Type'] = 'text/plain'
-        self.response.out.write('\r\n')
         # get outdated package infos
         packages = db.GqlQuery("SELECT * FROM Package ORDER BY timestamp ASC LIMIT %d" % UPDATE_AT_A_TIME)
+        update_handler(self, packages)
 
-        packages_list = list(packages)
-        if len(packages_list) == 0:
-            update_list_of_packages()
-
-        for pkg in packages_list:
-            self.response.out.write(pkg.name)
-            try:
-                update_package_info(pkg)
-            except Exception, e:
-                self.response.out.write(" - %s" % e)
-                strace = traceback.format_exc()
-                self.response.out.write(strace)
-                
-            
-            self.response.out.write("\r\n")
-            
+class CronUpdateTop(webapp.RequestHandler):
+    def get(self):
+        query = "SELECT * FROM Package ORDER BY downloads DESC LIMIT 250"
+        packages = list(db.GqlQuery(query))
+        packages = sorted(packages, key=lambda x: x.timestamp)[:UPDATE_AT_A_TIME]
+        #timestamp ASC LIMIT %d""" % UPDATE_AT_A_TIME
+        update_handler(self, packages)
 
 class PackageList(webapp.RequestHandler):
     def get(self):

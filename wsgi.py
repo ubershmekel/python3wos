@@ -14,6 +14,7 @@ app = webapp.WSGIApplication(
         ('/', main.DatabaseMainPage),
 
         ('/tasks/update', pypi_cron.CronUpdate),
+        ('/tasks/update_top', pypi_cron.CronUpdateTop),
         ('/tasks/package_list', pypi_cron.PackageList),
         ('/tasks/erase_to_ignore', pypi_cron.EraseToIgnore),
         ('/tasks/erase_dups', pypi_cron.EraseDups),
