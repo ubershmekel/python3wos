@@ -29,6 +29,7 @@ EQUIVALENTS = {
     'unittest2': 'https://docs.python.org/3/library/unittest.html',
     'simplejson': 'https://docs.python.org/3/library/json.html',
     'futures': 'http://docs.python.org/py3k/library/concurrent.futures.html',
+    'suds': 'https://pypi.python.org/pypi/suds-jurko',
     }
 
 # the following have a dup on the list
