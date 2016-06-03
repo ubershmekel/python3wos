@@ -13,11 +13,11 @@ handlers:
   static_dir: static
 
 - url: /tasks/.*
-  script: wsgi.app
+  script: wsgi.py
   login: admin
 
 - url: /.*
-  script: wsgi.app
+  script: wsgi.py
   secure: optional
 
 skip_files:
