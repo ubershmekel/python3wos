@@ -30,6 +30,7 @@ EQUIVALENTS = {
     'simplejson': 'https://docs.python.org/3/library/json.html',
     'futures': 'http://docs.python.org/3/library/concurrent.futures.html',
     'ipaddr': 'https://docs.python.org/3/library/ipaddress.html',
+    'MySQL-python': 'https://pypi.python.org/pypi/mysqlclient',
     'python-openid': 'https://github.com/necaris/python3-openid',
     'suds': 'https://pypi.python.org/pypi/suds-jurko',
     }
