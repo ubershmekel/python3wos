@@ -2,201 +2,61 @@ import cPickle
 import zlib
 import datetime
 import traceback
+import logging
 
 from google.appengine.ext import webapp
-from google.appengine.ext import db
 from google.appengine.api import memcache
 
 import pypi_parser
-from models import Package
-import config
-
-UPDATE_AT_A_TIME = 10
-
-if config.DEV:
-    # faster when developing
-    UPDATE_AT_A_TIME = 2
-
-
-DB_STEPS = 400
-
-#TO_IGNORE = 'multiprocessing', 'simplejson', 'argparse', 'uuid', 'setuptools', 'Jinja', 'unittest2'
-EQUIVALENTS = {
-    'multiprocessing': 'https://docs.python.org/3/library/multiprocessing.html',
-    'argparse': 'https://docs.python.org/3/library/argparse.html',
-    'uuid': 'https://docs.python.org/3/library/uuid.html',
-    'unittest2': 'https://docs.python.org/3/library/unittest.html',
-    'simplejson': 'https://docs.python.org/3/library/json.html',
-    'futures': 'http://docs.python.org/3/library/concurrent.futures.html',
-    'ipaddr': 'https://docs.python.org/3/library/ipaddress.html',
-    'MySQL-python': 'https://pypi.python.org/pypi/mysqlclient',
-    'python-openid': 'https://github.com/necaris/python3-openid',
-    'suds': 'https://pypi.python.org/pypi/suds-jurko',
-    }
-
-# the following have a dup on the list
-# setuptools - distribute
-# Jinja - jinja2
-TO_IGNORE = 'setuptools', 'Jinja', 
-
-
-def fix_equivalence(pkg):
-    if pkg.name in EQUIVALENTS:
-        pkg.equivalent_url = EQUIVALENTS[pkg.name]
 
 
 PACKAGES_CACHE_KEY = 'packages_names'
-PACKAGES_CHECKED_INDEX = 'packages_index'
 
-def compress(obj):
-    return zlib.compress(cPickle.dumps(obj))
 
-def decompress(compressed_bytes):
-    return cPickle.loads(zlib.decompress(compressed_bytes))
+def compress_and_store(obj, key):
+    # The maximum size of a cached data value is 1 MB (10^6 bytes).
+    compressed_bytes = zlib.compress(cPickle.dumps(obj))
+    memcache.add(key, compressed_bytes, 60 * 60 * 24)
 
-def get_mcache_package_list():
-    buffer = memcache.get(PACKAGES_CACHE_KEY)
-    if buffer is None:
+
+def get_and_decompress(key):
+    compressed_bytes = memcache.get(key)
+    if compressed_bytes is None:
         # for handling the empty cache
         return None
-    if type(buffer) == list:
-        # for migrating the existing memcache
-        return buffer
-    # normal flow
-    return decompress(buffer)
+    return cPickle.loads(zlib.decompress(compressed_bytes))
 
-def set_mcache_package_list(package_names):
-    compressed_bytes = compress(package_names)
-    memcache.add(PACKAGES_CACHE_KEY, compressed_bytes, 60 * 60 * 24)
 
-def update_list_of_packages():
-    package_names = get_mcache_package_list()
-    package_index = memcache.get(PACKAGES_CHECKED_INDEX)
+def fetch_and_cache_package_info():
+    packages = list(pypi_parser.get_packages())
+    compress_and_store(packages, PACKAGES_CACHE_KEY)
+    return packages
 
-    if package_index is None:
-        package_index = 0
-    
-    if package_names is None:
-        package_names = pypi_parser.get_list_of_packages()
-        set_mcache_package_list(package_names)
 
-    for name in package_names[package_index:package_index + DB_STEPS]:
-        if name in TO_IGNORE:
-            pass
-        else:
-            query = db.GqlQuery("SELECT __key__ FROM Package WHERE name = :name", name=name)
-            if len(list(query)) == 0:
-                p = Package(name=name)
-                p.put()
-        
-        package_index += 1
-        if package_index % 5 == 0:
-            memcache.set(PACKAGES_CHECKED_INDEX, package_index, 60 * 60 * 24)
-            
-    if package_index == len(package_names):
-        return -1
-    
-    return package_index
+def get_packages_list_from_cache_or_pypi():
+    packages = get_and_decompress(PACKAGES_CACHE_KEY)
+    if packages is None:
+        return fetch_and_cache_package_info()
+    else:
+        return packages
 
-def update_package_info(pkg):
-    try:
-        info = pypi_parser.get_package_info(pkg.name)
-    except pypi_parser.NoReleasesException, e:
-        print(pkg)
-        print(e)
-        # If this happens because of a pypi bug - we might want to consider doing something more serious here
-        # TODO: figure this out better
-        info = {}
-    info['timestamp'] = datetime.datetime.utcnow()
-    for key, value in info.items():
-        setattr(pkg, key, value)
-    fix_equivalence(pkg)
-    pkg.put()
-    return pkg
-
-def update_handler(self, packages):
+def update_handler(self):
     self.response.headers['Content-Type'] = 'text/plain'
     self.response.out.write('\r\n')
 
-    packages_list = list(packages)
-    if len(packages_list) == 0:
-        update_list_of_packages()
+    try:
+        fetch_and_cache_package_info()
+    except Exception, e:
+        self.response.out.write(" - %s" % e)
+        strace = traceback.format_exc()
+        self.response.out.write(strace)
 
-    for pkg in packages_list:
-        self.response.out.write(pkg.name)
-        try:
-            update_package_info(pkg)
-        except Exception, e:
-            self.response.out.write(" - %s" % e)
-            strace = traceback.format_exc()
-            self.response.out.write(strace)
-
-        self.response.out.write("\r\n")
-
-
-class CronUpdate(webapp.RequestHandler):
-    def get(self):
-        # get outdated package infos
-        packages = db.GqlQuery("SELECT * FROM Package ORDER BY timestamp ASC LIMIT %d" % UPDATE_AT_A_TIME)
-        update_handler(self, packages)
+    self.response.out.write("\r\n")
 
 class CronUpdateTop(webapp.RequestHandler):
     def get(self):
-        query = "SELECT * FROM Package ORDER BY downloads DESC LIMIT 250"
-        packages = list(db.GqlQuery(query))
-        packages = sorted(packages, key=lambda x: x.timestamp)[:UPDATE_AT_A_TIME]
-        #timestamp ASC LIMIT %d""" % UPDATE_AT_A_TIME
-        update_handler(self, packages)
+        update_handler(self)
 
-class PackageList(webapp.RequestHandler):
-    def get(self):
-        from google.appengine.ext.webapp import template
-        #self.response.out.write("updating package list")
-        # get outdated package infos
-        i = update_list_of_packages()
-        self.response.out.write("%d" % i)
-        if i == -1:
-            next_url = ''
-        else:
-            next_url = '#'
-        context = {
-            'title': 'Updating package list',
-            'current_name': str(i),
-            'next_name': str(i + DB_STEPS),
-            'next_url': next_url,
-        }
-        self.response.out.write(template.render('redirect.html', context))
-
-class EraseToIgnore(webapp.RequestHandler):
-    def get(self):
-        self.response.out.write("erasing packages")
-        for name in TO_IGNORE:
-            packages = db.GqlQuery("SELECT * FROM Package WHERE name = :1", name)
-            for pkg in packages:
-                pkg.delete()
-
-
-class EraseDups(webapp.RequestHandler):
-    def get(self):
-        packages = db.GqlQuery("SELECT * FROM Package")
-        done_already = set()
-        for pkg in packages:
-            if pkg.name in done_already:
-                continue
-            query = db.GqlQuery("SELECT * FROM Package WHERE name = :name", name=pkg.name)
-            dups = list(query)
-            if len(dups) > 1:
-                self.response.out.write(pkg.name + '\r\n')
-                best_item = dups[0]
-                best_i = 0
-                for i, item in enumerate(dups):
-                    if best_item < item.timestamp:
-                        best_i = i
-                        best_item = item
-                    for i in range(len(dups)):
-                        if i != best_i:
-                            dups[i].delete()
-            done_already.add(pkg.name)
 
 class ClearCache(webapp.RequestHandler):
     def get(self):
@@ -206,60 +66,6 @@ class ClearCache(webapp.RequestHandler):
         result = memcache.delete(HTML_CACHE_KEY)
         self.response.out.write("result: %s" % result)
 
-
-# Request handler for the URL /update_datastore
-class update_models(webapp.RequestHandler):
-    def get(self):
-        import urllib
-        from google.appengine.ext.webapp import template
-        url_n_template = 'update_models'
-        name = self.request.get('name', None)
-        if name is None:
-            # First request, just get the first name out of the datastore.
-            pkg = Package.gql('ORDER BY name DESC').get()
-            name = pkg.name
-
-        q = Package.gql('WHERE name <= :1 ORDER BY name DESC', name)
-        items = q.fetch(limit=DB_STEPS)
-        if len(items) > 1:
-            next_name = items[-1].name
-            next_url = '/tasks/%s?name=%s' % (url_n_template, urllib.quote(next_name))
-        else:
-            next_name = 'FINISHED'
-            next_url = ''  # Finished processing, go back to main page.
-        
-        for current_pkg in items:
-            # modify the model if needed here
-            #fix_equivalence(current_pkg)
-            #current_pkg.py2only = False
-            
-            if current_pkg.name in ('pylint', 'docutils'):
-                current_pkg.force_green = True
-            else:
-                current_pkg.force_green = False
-            current_pkg.put()
-            # end of modify models
-
-        context = {
-            'current_name': name,
-            'next_name': next_name,
-            'next_url': next_url,
-        }
-        self.response.out.write(template.render('%s.html' % url_n_template, context))
-
-class update_single(webapp.RequestHandler):
-    def get(self):
-        name = self.request.get('name', None)
-        q = Package.gql('WHERE name = :1', name)
-        items = q.fetch(limit=1)
-        if len(items) == 0:
-            self.response.out.write('did not find "%s"' % name)
-            return
-        pkg = items[0]
-        pkg = update_package_info(pkg)
-        self.response.out.write(str(pkg))
-
-        
 
 def profile_main():
     '''

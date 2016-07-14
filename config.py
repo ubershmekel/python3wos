@@ -2,6 +2,7 @@ import os
 
 
 HTML_CACHE_KEY = "WOShtml"
+PACKAGES_CACHE_KEY = "Packages"
 
 
 DEV = False

@@ -7,12 +7,11 @@ from google.appengine.ext import db
 from google.appengine.api import memcache
 
 import config
+import pypi_cron
 
 def build_data():
-    packages = db.GqlQuery("SELECT * FROM Package ORDER BY downloads DESC LIMIT 200")
-    
+    packages_list = pypi_cron.get_packages_list_from_cache_or_pypi()
     good = 0
-    packages_list = list(packages)
     total = len(packages_list)
     min_time = None
     for pkg in packages_list:

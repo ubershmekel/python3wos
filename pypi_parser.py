@@ -1,5 +1,5 @@
 
-#from urllib.request import urlopen
+import json
 import logging
 from urllib import urlopen
 import xmlrpclib
@@ -9,11 +9,41 @@ import os
 import datetime
 import traceback
 
+from easydict import EasyDict
+
 import config
 
-base_url = 'http://pypi.python.org'
+PYPI_URL = 'https://pypi.python.org/pypi'
+PACKAGE_INFO_FMT = '{package_index_url}/{package}/json'
 
-how_many_to_chart = 200
+HOW_MANY_TO_CHART = 200
+
+
+FORCE_GREEN = set([
+    'zc.recipe.egg',
+])
+
+EQUIVALENTS = {
+    'argparse': 'https://docs.python.org/3/library/argparse.html',
+    'BeautifulSoup': 'http://pypi.python.org/pypi/beautifulsoup4/',
+    'dnspython': 'http://pypi.python.org/pypi/dnspython3',
+    'functools32': 'https://docs.python.org/3/library/functools.html',
+    'futures': 'http://docs.python.org/3/library/concurrent.futures.html',
+    'ipaddr': 'https://docs.python.org/3/library/ipaddress.html',
+    'ipaddress': 'https://docs.python.org/3/library/ipaddress.html',
+    'MySQL-python': 'https://pypi.python.org/pypi/mysqlclient',
+    'multiprocessing': 'https://docs.python.org/3/library/multiprocessing.html',
+    'ordereddict': 'http://docs.python.org/3/library/collections.html#collections.OrderedDict',
+    'python-memcached': 'https://pypi.python.org/pypi/python3-memcached',
+    'python-openid': 'https://github.com/necaris/python3-openid',
+    'simplejson': 'https://docs.python.org/3/library/json.html',
+    'suds': 'https://pypi.python.org/pypi/suds-jurko',
+    'ssl': 'http://docs.python.org/3/library/ssl.html',
+    'unittest2': 'https://docs.python.org/3/library/unittest.html',
+    'uuid': 'https://docs.python.org/3/library/uuid.html',
+    'xlwt': 'https://pypi.python.org/pypi/xlwt-future',
+}
+
 
 is_app_engine = config.GAE
 
@@ -46,7 +76,7 @@ if is_app_engine:
 
         def request(self, host, handler, request_body, verbose=0):
             result = None
-            url = 'http://%s%s' % (host, handler)
+            url = 'https://%s%s' % (host, handler)
             try:
                 response = urlfetch.fetch(url,
                                           payload=request_body,
@@ -74,60 +104,45 @@ if is_app_engine:
             p.feed(response_body)
             return u.close()
         
-    CLIENT = xmlrpclib.ServerProxy('http://pypi.python.org/pypi', GAEXMLRPCTransport())
+    CLIENT = xmlrpclib.ServerProxy(PYPI_URL, GAEXMLRPCTransport())
 else:
-    CLIENT = xmlrpclib.ServerProxy('http://pypi.python.org/pypi')
+    CLIENT = xmlrpclib.ServerProxy(PYPI_URL)
 
 class NoReleasesException(Exception):
     pass
 
-def get_package_info(name):
-    # Having to `lower` the name is a new requirement as of somewhere beteen 2015-12 and 2016-05.
-    # Strange.
-    # Maybe we don't need to `lower`? I'm confused.
-    safe_name = name
-    release_list = CLIENT.package_releases(safe_name, True)
-    
-    downloads = 0
+def fix_equivalence(pkg):
+    if pkg.name in EQUIVALENTS:
+        pkg.equivalent_url = EQUIVALENTS[pkg.name]
+    else:
+        pkg.equivalent_url = None
+    if pkg.name in FORCE_GREEN:
+        pkg.force_green = True
+    else:
+        pkg.force_green = False
+
+def get_package_info(name, downloads=0):
+    metadata_url = PACKAGE_INFO_FMT.format(package_index_url=PYPI_URL, package=name)
+    print(metadata_url)
+    package_data_str = urlopen(metadata_url).read()
+    package_data = json.loads(package_data_str)
     py3 = False
     py2only = False
-    url = 'http://pypi.python.org/pypi/' + safe_name
-    most_recent = True
+    url = package_data['package_url']
 
+    release_list = package_data["releases"]
     if len(release_list) == 0:
-        raise NoReleasesException("No releases or a pypi bug for: %s" % safe_name)
+        # NOTE: packages with no releases or no url's just throw an exception.
+        raise NoReleasesException("No releases or a pypi bug for: %s" % name)
 
-    for release in release_list:
-        release_metadata = None
-        for i in range(3):
-            try:
-                urls_metadata_list = CLIENT.release_urls(safe_name, release)
-                release_metadata = CLIENT.release_data(safe_name, release)
-                break
-            except xmlrpclib.ProtocolError, e:
-                # retry 3 times
-                strace = traceback.format_exc()
-                logging.error("retry %s xmlrpclib: %s" % (i, strace))
+    # str(list) so we can easily find Python 3.X classifiers
+    classifiers = str(package_data["info"]['classifiers'])
+    if 'Programming Language :: Python :: 3' in classifiers:
+        py3 = True
+    elif 'Programming Language :: Python :: 2 :: Only' in classifiers:
+        py2only = True
 
-        if release_metadata is None:
-            raise Exception("Failed to fetch release metadata for release: %s" % release)
-
-        url = release_metadata['package_url']
-        
-        if most_recent:
-            most_recent = False
-            # to avoid checking for 3.1, 3.2 etc, lets just str the classifiers
-            classifiers = str(release_metadata['classifiers'])
-            if 'Programming Language :: Python :: 3' in classifiers:
-                py3 = True
-            elif 'Programming Language :: Python :: 2 :: Only' in classifiers:
-                py2only = True
-        
-        for url_metadata in urls_metadata_list:
-            downloads += url_metadata['downloads']
-
-    # NOTE: packages with no releases or no url's just throw an exception.
-    info = dict(
+    info = EasyDict(
         py2only=py2only,
         py3=py3,
         downloads=downloads,
@@ -136,26 +151,19 @@ def get_package_info(name):
         timestamp=datetime.datetime.utcnow().isoformat(),
         )
 
+    fix_equivalence(info)
     return info
 
-if is_app_engine:
-    def get_list_of_packages():
-        return CLIENT.list_packages()
-else:
-    #from filecache import filecache
-    #@filecache(24 * 60 * 60)
-    def get_list_of_packages():
-        return CLIENT.list_packages()
-
 def get_packages():
-    package_names = get_list_of_packages()
+    package_name_downloads = CLIENT.top_packages(HOW_MANY_TO_CHART)
     
     exceptions = []
-    for pkg in package_names:
+    for pkg_name, downloads in package_name_downloads:
+        print(pkg_name, downloads)
         try:
-            info = get_package_info(pkg)
+            info = get_package_info(pkg_name, downloads=downloads)
         except Exception, e:
-            print(pkg)
+            print(pkg_name)
             print(e)
             exceptions.append(e)
             continue
@@ -185,35 +193,23 @@ def count_good(packages_list):
             good += 1
     return good
 
-def remove_irrelevant_packages(packages):
-    to_ignore = 'multiprocessing', 'simplejson', 'argparse', 'uuid', 'setuptools'
-    for pkg in packages:
-        if pkg['name'] in to_ignore:
-            continue
-        else:
-            yield pkg
-
 
 def main():
     packages = get_packages()
-    packages = remove_irrelevant_packages(packages)
     packages = list(packages)
     def get_downloads(x): return x['downloads']
     packages.sort(key=get_downloads)
 
-    # just for backup
-    open('results.txt', 'w').write(pprint.pformat(packages))
-
-    top = packages[-how_many_to_chart:]
+    top = packages[-HOW_MANY_TO_CHART:]
     html = build_html(top)
 
-    open('results.html', 'w').write(html)
-    
-    open('count.txt', 'w').write('%d/%d' % (count_good(top), len(top)))
-    open('date.txt', 'w').write(datetime.datetime.now().isoformat())
+    html_fname = 'results.html'
+    open(html_fname, 'w').write(html)
+    import webbrowser
+    webbrowser.open(html_fname)
 
 def test():
-    print(get_package_info('Shinken'))
+    print(get_package_info('coverage'))
     
 if __name__ == '__main__':
     #main()
