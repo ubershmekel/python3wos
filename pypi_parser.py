@@ -128,7 +128,7 @@ def get_package_info(name, downloads=0):
     package_data = json.loads(package_data_str)
     py3 = False
     py2only = False
-    url = package_data['package_url']
+    url = package_data.get('package_url', PYPI_URL + '/' + name)
 
     release_list = package_data["releases"]
     if len(release_list) == 0:
