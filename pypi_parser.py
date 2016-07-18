@@ -21,6 +21,7 @@ HOW_MANY_TO_CHART = 200
 
 FORCE_GREEN = set([
     'zc.recipe.egg',
+    'bcdoc',
 ])
 
 EQUIVALENTS = {
