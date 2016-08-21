@@ -28,6 +28,7 @@ EQUIVALENTS = {
     'argparse': 'https://docs.python.org/3/library/argparse.html',
     'BeautifulSoup': 'http://pypi.python.org/pypi/beautifulsoup4/',
     'dnspython': 'http://pypi.python.org/pypi/dnspython3',
+    'Fabric': 'https://pypi.python.org/pypi/Fabric3',
     'functools32': 'https://docs.python.org/3/library/functools.html',
     'futures': 'http://docs.python.org/3/library/concurrent.futures.html',
     'ipaddr': 'https://docs.python.org/3/library/ipaddress.html',
