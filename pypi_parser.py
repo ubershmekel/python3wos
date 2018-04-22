@@ -157,7 +157,12 @@ def get_package_info(name, downloads=0):
     return info
 
 def get_packages():
-    package_name_downloads = CLIENT.top_packages(HOW_MANY_TO_CHART)
+    package_name_downloads = []
+    for line in open('rip/results-20180421-235824.json'):
+        item = json.loads(line)
+        pair = item["file_project"], item["download_count"]
+        package_name_downloads.append(pair)
+    #package_name_downloads = CLIENT.top_packages(HOW_MANY_TO_CHART)
     
     exceptions = []
     for pkg_name, downloads in package_name_downloads:

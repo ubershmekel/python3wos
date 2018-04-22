@@ -1,5 +1,6 @@
 
 import os
+import json
 
 from google.appengine.ext.webapp import template
 from google.appengine.ext import webapp
@@ -42,12 +43,18 @@ def build_data():
 
 def get_html():
     path = os.path.join(os.path.dirname(__file__), 'index_db.html')
-    template_values = build_data()
+    # 2018-04-22 killing the building of data
+    #template_values = build_data()
+    template_values = json.load(open("rip/template-data.json"))
     html = template.render(path, template_values)
     return html
 
 class DatabaseMainPage(webapp.RequestHandler):
     def get(self):
+        showdata = self.request.get('showdata', None)
+        if showdata is not None:
+            self.response.out.write(json.dumps(build_data()))
+            return
         nocache = self.request.get('nocache', None)
         if nocache is not None:
             self.response.out.write(get_html())
@@ -58,7 +65,6 @@ class DatabaseMainPage(webapp.RequestHandler):
             # 5 hour cache
             html = get_html()
             memcache.add(config.HTML_CACHE_KEY, html, 60 * 60 * 5)
-        
         self.response.out.write(html)
 
 
