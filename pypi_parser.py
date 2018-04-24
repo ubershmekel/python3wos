@@ -39,6 +39,8 @@ EQUIVALENTS = {
     'python-memcached': 'https://pypi.python.org/pypi/python3-memcached',
     'python-openid': 'https://github.com/necaris/python3-openid',
     'simplejson': 'https://docs.python.org/3/library/json.html',
+    'sklearn': 'https://pypi.org/project/scikit-learn',
+    'subprocess': 'https://docs.python.org/3/library/subprocess.html',
     'suds': 'https://pypi.python.org/pypi/suds-jurko',
     'ssl': 'http://docs.python.org/3/library/ssl.html',
     'unittest2': 'https://docs.python.org/3/library/unittest.html',
@@ -56,7 +58,7 @@ if is_app_engine:
     '''
     `set_default_fetch_deadline` to avoid the following errors:
     http://stackoverflow.com/questions/13051628/gae-appengine-deadlineexceedederror-deadline-exceeded-while-waiting-for-htt
-    
+
     Failed to fetch http://pypi.python.org/pypi, caused by: Traceback (most recent call last):
     File "/base/data/home/apps/s~python3wos2/1.389386800936840076/pypi_parser.py", line 37, in request
         headers={'Content-Type': 'text/xml'})
@@ -69,7 +71,7 @@ if is_app_engine:
     DeadlineExceededError: Deadline exceeded while waiting for HTTP response from URL: http://pypi.python.org/pypi
     '''
     urlfetch.set_default_fetch_deadline(60)
-    
+
     class GAEXMLRPCTransport(object):
         """Handles an HTTP transaction to an XML-RPC server."""
 
@@ -90,7 +92,7 @@ if is_app_engine:
                 raise xmlrpclib.ProtocolError(host + handler, 500, msg, {})
 
             if response.status_code != 200:
-                logging.error('%s returned status code %s' % 
+                logging.error('%s returned status code %s' %
                               (url, response.status_code))
                 raise xmlrpclib.ProtocolError(host + handler,
                                               response.status_code,
@@ -105,7 +107,7 @@ if is_app_engine:
             p, u = xmlrpclib.getparser(use_datetime=False)
             p.feed(response_body)
             return u.close()
-        
+
     CLIENT = xmlrpclib.ServerProxy(PYPI_URL, GAEXMLRPCTransport())
 else:
     CLIENT = xmlrpclib.ServerProxy(PYPI_URL)
@@ -163,7 +165,7 @@ def get_packages():
         pair = item["file_project"], item["download_count"]
         package_name_downloads.append(pair)
     #package_name_downloads = CLIENT.top_packages(HOW_MANY_TO_CHART)
-    
+
     exceptions = []
     for pkg_name, downloads in package_name_downloads:
         print(pkg_name, downloads)
@@ -175,10 +177,10 @@ def get_packages():
             exceptions.append(e)
             continue
             # raise exceptions later after you tried updating all of the packages.
-            
+
         print info
         yield info
-    
+
     for e in exceptions:
         raise e
 
@@ -217,9 +219,7 @@ def main():
 
 def test():
     print(get_package_info('coverage'))
-    
+
 if __name__ == '__main__':
     #main()
     test()
-
-    
